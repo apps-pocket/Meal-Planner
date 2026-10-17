@@ -115,7 +115,7 @@ ds:['Green salad','Papad','Curd / raita','Pickle','Green chutney','Buttermilk','
 so:['Tomato soup','Sweet corn soup','Mixed vegetable soup','Lemon coriander soup','Palak soup','Pumpkin soup','Moong dal soup'],
 ve:['Cucumber-carrot salad','Steamed broccoli','Sauteed spinach','Beetroot salad','Sprouted moong','Lauki sabzi','Bhindi fry']};
 const PRE=[['Breakfast','08:00','meal'],['Fruit / mid-morning','10:30','meal'],['Lunch','13:00','meal'],['Tea & snacks','17:00','meal'],['Dinner','20:00','meal'],['Medicine','09:00','med']];
-let S,view='plan',off=0,selDate=null,strokes=0,dip=null,cUrl=null,ring=null,AU=null,wl=null,sw=null;
+let S,view='plan',off=0,selDate=null,strokes=0,dip=null,cUrl=null,ring=null,AU=null,sw=null;
 try{S=JSON.parse(localStorage.getItem('meal-planner-v1'))}catch(e){}
 S=S||{};S.bank=S.bank||{};for(const c in DEF)if(!S.bank[c])S.bank[c]=[...DEF[c]];
 S.plans=S.plans||{};S.track=S.track||{};S.revealed=S.revealed||{};S.alarms=S.alarms||[];S.snd=S.snd||'alarm';
@@ -191,7 +191,8 @@ function rMeals(){
 function rDrawer(){
  opn('#dr',`<div class="dpn"><div class="row"><h2 class="sp">People</h2><button class="ib" data-act="shutd" aria-label="Close">✕</button></div><p class="mute">Each person gets their own week plan. Pick someone to see their meals, then tap any meal to change it for them.</p>
  ${S.people.map((p,i)=>`<div class="pp ${p.id==S.pid?'sel':''}" data-act="pp" data-id="${p.id}"><span class="av" style="background:${COL[i%COL.length]}">${esc(p.name[0].toUpperCase())}</span><b class="sp">${esc(p.name)}</b><button class="ib" data-act="pren" data-id="${p.id}" aria-label="Rename">✎</button>${S.people.length>1?`<button class="ib" data-act="pdel" data-id="${p.id}" aria-label="Delete">×</button>`:''}</div>`).join('')}
- <form id="pf" style="margin-top:12px"><input name="n" placeholder="Add a person, e.g. Dad" maxlength="20" required><button class="btn fill">Add</button></form></div>`)}
+ <form id="pf" style="margin-top:12px"><input name="n" placeholder="Add a person, e.g. Dad" maxlength="20" required><button class="btn fill">Add</button></form>
+ <button class="btn fill" data-act="share" style="width:100%;margin-top:22px;padding:11px">Share app</button></div>`)}
 function rSheet(){
  const di=(new Date(selDate+'T12:00').getDay()+6)%7,P=plan(off),it=P[di][sw.s][sw.i],c=it.c,used=new Set();
  P.forEach(d=>Object.values(d).flat().forEach(x=>{if(x.c==c)used.add(x.t)}));
@@ -205,10 +206,7 @@ function rAlarms(){
  <div class="card"><h3>Quick add</h3><div class="chips">${PRE.map((p,i)=>`<span class="chip" style="padding:4px 11px;cursor:pointer" data-act="pre" data-i="${i}">+ ${p[0]} ${p[1]}</span>`).join('')}</div>
  <form id="af"><input name="l" placeholder="Label, e.g. Vitamin D" required maxlength="40"><input name="t" type="time" required style="flex:0 0 110px"><select name="k" style="flex:0 0 100px"><option value="meal">Meal</option><option value="med">Medicine</option></select><button class="btn fill">Add</button></form></div>
  <div class="card">${A.map(a=>`<div class="al ${a.k}"><b>${a.t}</b><span class="sp">${esc(a.l)}<div class="mute">${a.k=='med'?'Medicine':'Meal'} · every day</div></span><button class="sw ${a.on?'on':''}" data-act="sw" data-id="${a.id}" aria-label="Toggle"></button><button class="chip" style="border:0" data-act="del" data-id="${a.id}" aria-label="Delete">×</button></div>`).join('')||'<div class="mute">No alarms yet. Tap a quick-add above.</div>'}</div>
- <div class="card"><h3>When the app is closed</h3><p class="mute" style="margin:6px 0 10px">A web app can't wake itself up after you close it, and Chrome has no way to schedule alarms for it. Alarms here ring only while the app is open. To be reminded even when it is closed, add them to your phone's Calendar (each repeats daily). For medicine, also use the phone's own Clock app.</p>
- <button class="btn fill" data-act="ics">Add alarms to phone calendar</button>
- <div class="al" style="margin-top:8px;border:0;padding-bottom:0"><span class="sp">Keep screen on while the app is open<div class="mute">So in-app alarms can ring while the phone rests on the table</div></span><button class="sw ${S.wake?'on':''}" data-act="wake" aria-label="Toggle"></button></div></div>
- <div class="row"><button class="btn" data-act="perm">Allow notifications</button><span class="mute sp">Also shows a notification when an alarm goes off.</span></div>`;
+ <div class="row"><button class="btn" data-act="perm">Allow notifications</button><span class="mute sp">Alarms ring only while the app is open on screen.</span></div>`;
  $('#snd').value=S.snd}
 document.addEventListener('click',e=>{
  if(e.target.id=='dr'||e.target.id=='sh'){shut('#'+e.target.id);return}
@@ -219,6 +217,10 @@ document.addEventListener('click',e=>{
  if(a=='install'){dip&&dip.prompt();return}
  if(a=='menu'){rDrawer();return}
  if(a=='shutd'){shut('#dr');return}
+ if(a=='share'){const u=location.origin+location.pathname.replace(/index\.html$/,''),t='Meal Planner: plan weekly meals, track them and get meal reminders.';
+  if(navigator.share)navigator.share({title:'Meal Planner',text:t,url:u}).catch(()=>{});
+  else if(navigator.clipboard)navigator.clipboard.writeText(u).then(()=>alert('Link copied. Paste it in a chat to share.')).catch(()=>prompt('Copy this link',u));
+  else prompt('Copy this link',u);return}
  if(a=='shut'){shut('#sh');return}
  if(a=='pp'){S.pid=d.id;selDate=null;save();shut('#dr');render();return}
  if(a=='pren'){const p=S.people.find(x=>x.id==d.id),n=prompt('Rename person',p.name);if(n&&n.trim()){p.name=n.trim().slice(0,20);save();rDrawer();render()}return}
@@ -227,9 +229,7 @@ document.addEventListener('click',e=>{
  if(a=='setm'||a=='rand'){const di=(new Date(selDate+'T12:00').getDay()+6)%7,P=plan(off),it=P[di][sw.s][sw.i],o=S.bank[it.c];
   if(a=='setm')it.t=o[+d.b];else{const used=new Set();P.forEach(x=>Object.values(x).flat().forEach(y=>{if(y.c==it.c)used.add(y.t)}));const f=o.filter(z=>z!=it.t&&!used.has(z)),g=f.length?f:o.filter(z=>z!=it.t);if(g.length)it.t=g[Math.floor(Math.random()*g.length)]}
   save();shut('#sh');render();return}
- if(a=='ics'){dl();return}
- if(a=='wake'){S.wake=!S.wake;wake()}
- else if(a=='tab')view=d.v;
+  if(a=='tab')view=d.v;
  else if(a=='wk'){off+=+d.d;selDate=null}
  else if(a=='pick')selDate=d.k;
  else if(a=='shuffle')plan(off,true);
@@ -237,39 +237,29 @@ document.addEventListener('click',e=>{
  else if(a=='done'||a=='like'){const t=tk(selDate,d.s);if(a=='done')t.d=!t.d;else t.l=!t.l}
  else if(a=='rm')S.bank[d.c].splice(+d.i,1);
  else if(a=='reset')S.bank=JSON.parse(JSON.stringify(DEF));
- else if(a=='pre'){const p=PRE[+d.i];addAlarm(p[0],p[1],p[2])}
- else if(a=='sw'){const x=S.alarms.find(x=>x.id==d.id);x.on=!x.on;x.day=x.on&&passed(x)?iso(new Date()):''}
+ else if(a=='pre'){const p=PRE[+d.i];S.alarms.push({id:Date.now()+'',l:p[0],t:p[1],k:p[2],on:true})}
+ else if(a=='sw'){const x=S.alarms.find(x=>x.id==d.id);x.on=!x.on}
  else if(a=='del')S.alarms=S.alarms.filter(x=>x.id!=d.id);
  save();render()});
 document.addEventListener('change',e=>{if(e.target.id=='snd'){S.snd=e.target.value;save()}if(e.target.id=='snf')pickSnd(e.target.files[0])});
 document.addEventListener('submit',e=>{e.preventDefault();const f=e.target;
- if(f.id=='af'){const v=new FormData(f);addAlarm(v.get('l'),v.get('t'),v.get('k'))}
+ if(f.id=='af'){const v=new FormData(f);S.alarms.push({id:Date.now()+'',l:v.get('l'),t:v.get('t'),k:v.get('k'),on:true})}
  else if(f.id=='pf'){const n=new FormData(f).get('n').trim();if(!n)return;const id='p'+Date.now();S.people.push({id,name:n});S.pid=id;selDate=null;save();shut('#dr');render();return}
  else{const v=f.querySelector('input').value.trim();if(!v)return;(S.bank[f.dataset.c]=S.bank[f.dataset.c]||[]).push(v)}
  save();render()});
 /* ---------- alarms ---------- */
-const passed=a=>{const n=new Date(),[h,m]=a.t.split(':');return n.getHours()*60+n.getMinutes()>+h*60+ +m};
-function addAlarm(l,t,k){const a={id:Date.now()+'',l,t,k,on:true};if(passed(a))a.day=iso(new Date());S.alarms.push(a)}
 function banner(msg,btn){const b=$('#ban');b.innerHTML=`<span>${msg}</span><button class="btn fill" data-act="stop">${btn}</button>`;b.style.display='flex'}
 function notify(a){try{if(Notification.permission!='granted')return;const o={body:a.l,icon:'icon-192.png',tag:'a'+a.id,requireInteraction:true,vibrate:[300,150,300,150,300]};
  if(navigator.serviceWorker)navigator.serviceWorker.ready.then(r=>r.showNotification('Meal Planner',o)).catch(()=>{});else new Notification('Meal Planner',o)}catch(e){}}
 function fire(a){startRing();banner(`${a.k=='med'?'Medicine time':'Meal time'}: ${esc(a.l)}`,'Stop');notify(a)}
-function tick(){const n=new Date(),td=iso(n),nm=n.getHours()*60+n.getMinutes(),miss=[];
- S.alarms.forEach(a=>{if(!a.on||a.day==td)return;const [h,m]=a.t.split(':'),d=nm-(+h*60+ +m);
-  if(d==0){a.day=td;fire(a);save()}else if(d>0&&d<=240){a.day=td;miss.push(esc(a.l)+' '+a.t);save()}});
- if(miss.length&&!ring)banner('While you were away: '+miss.join(', '),'OK')}
-function dl(){const A=S.alarms.filter(a=>a.on);if(!A.length){alert('Add an alarm first.');return}
- const n=new Date(),p=iso(n).replace(/-/g,''),z=n.toISOString().replace(/[-:]/g,'').slice(0,15)+'Z',hh=m=>pad(m/60|0)+pad(m%60)+'00',L=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Meal Planner//EN'];
- A.forEach(a=>{const [h,m]=a.t.split(':'),s=+h*60+ +m,t=a.l.replace(/[,;\\]/g,' ');
-  L.push('BEGIN:VEVENT','UID:'+a.id+'@meal-planner','DTSTAMP:'+z,'DTSTART:'+p+'T'+hh(s),'DTEND:'+p+'T'+hh(Math.min(s+10,1439)),'RRULE:FREQ=DAILY','SUMMARY:'+t,'BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:'+t,'TRIGGER:PT0S','END:VALARM','END:VEVENT')});
- L.push('END:VCALENDAR');const u=URL.createObjectURL(new Blob([L.join('\r\n')],{type:'text/calendar'})),x=document.createElement('a');x.href=u;x.download='meal-planner-alarms.ics';document.body.appendChild(x);x.click();x.remove();setTimeout(()=>URL.revokeObjectURL(u),5000)}
-async function wake(){try{if(S.wake&&!document.hidden&&!wl){wl=await navigator.wakeLock.request('screen');wl.addEventListener('release',()=>{wl=null})}else if(!S.wake&&wl){await wl.release();wl=null}}catch(e){}}
-setInterval(tick,15000);document.addEventListener('visibilitychange',()=>{if(!document.hidden){tick();wake()}});
+function tick(){const n=new Date(),hm=pad(n.getHours())+':'+pad(n.getMinutes()),k=iso(n)+hm;
+ S.alarms.forEach(a=>{if(a.on&&a.t==hm&&a.last!=k){a.last=k;fire(a);save()}})}
+setInterval(tick,15000);
 /* ---------- install ---------- */
 addEventListener('beforeinstallprompt',e=>{e.preventDefault();dip=e;$('#inst').hidden=false});
 addEventListener('appinstalled',()=>{$('#inst').hidden=true});
 if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
-render();tick();wake();
+render();
 </script>
 </body>
 </html>
